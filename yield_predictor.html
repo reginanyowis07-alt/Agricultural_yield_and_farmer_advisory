@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Farmer Yield Advisor</title>
+<style>
+  :root {
+    --green: --green;
+    --green-dark: darkgreen;
+    --bg: white;
+    --card: white;
+    --text: darkblue;
+    --muted: darkgreen;
+    --border: white;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .card {
+    background: var(--card);
+    max-width: 520px;
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    padding: 32px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+    color: var(--green-dark);
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+  .hint {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-top: 2px;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fafcf9;
+    color: var(--text);
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--green);
+    background: #fff;
+  }
+  button {
+    width: 100%;
+    margin-top: 28px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--green);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button:hover { background: var(--green-dark); }
+  button:disabled { background: #a5b8a6; cursor: default; }
+
+  #result {
+    margin-top: 24px;
+    display: none;
+  }
+  .result-box {
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    background: #f0f7ef;
+  }
+  .result-box.error {
+    background: #fdecea;
+    border-color: #f5c6c2;
+  }
+  .result-headline {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin-bottom: 4px;
+  }
+  .result-box.error .result-headline {
+    color: #b71c1c;
+  }
+  .result-detail {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .api-config {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .api-config summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .api-config input {
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🌾 Farmer Yield Advisor</h1>
+  <div class="subtitle">Enter your field details below to get an estimated crop yield.</div>
+
+  <form id="yieldForm">
+    <label>Crop
+      <select id="crop">
+        <option value="Maize">Maize</option>
+        <option value="Wheat">Wheat</option>
+        <option value="Rice">Rice</option>
+        <option value="Soybean">Soybean</option>
+        <option value="Cotton">Cotton</option>
+      </select>
+    </label>
+
+    <label>Field size (hectares)
+      <input type="number" id="area" value="1000" min="0" step="any">
+      <div class="hint">The total area of land being farmed.</div>
+    </label>
+
+    <label>Year
+      <input type="number" id="year" value="2023" min="1900" max="2100" step="1">
+    </label>
+
+    <label>Expected rainfall (mm)
+      <input type="number" id="rainfall" value="850" min="0" step="any">
+      <div class="hint">Typical maize needs roughly 500–1200mm per season.</div>
+    </label>
+
+    <label>Pesticide use (kg per hectare)
+      <input type="number" id="pesticide_use" value="50" min="0" step="any">
+    </label>
+
+    <label>Average temperature (°C)
+      <input type="number" id="average_temperature" value="24" min="-50" max="60" step="any">
+    </label>
+
+    <button type="submit" id="submitBtn">Get my yield estimate</button>
+
+    <div class="status-row" id="statusRow" style="display:none;">
+      <div class="spinner" id="spinner"></div>
+      <span id="statusText">Contacting the prediction server…</span>
+    </div>
+  </form>
+
+  <div id="result">
+    <div class="result-box" id="resultBox">
+      <div class="result-headline" id="resultHeadline"></div>
+      <div class="result-detail" id="resultDetail"></div>
+    </div>
+  </div>
+
+  <details class="api-config">
+    <summary>Advanced: API address</summary>
+    <input type="text" id="apiUrl" value="http://127.0.0.1:8000/predict">
+    <div class="hint">Change this only if your server runs somewhere other than your own computer on port 8000.</div>
+  </details>
+
+  <footer>This tool sends your details to the local prediction server and translates the result into plain language.</footer>
+</div>
+
+<script>
+const form = document.getElementById('yieldForm');
+const statusRow = document.getElementById('statusRow');
+const spinner = document.getElementById('spinner');
+const statusText = document.getElementById('statusText');
+const resultDiv = document.getElementById('result');
+const resultBox = document.getElementById('resultBox');
+const resultHeadline = document.getElementById('resultHeadline');
+const resultDetail = document.getElementById('resultDetail');
+const submitBtn = document.getElementById('submitBtn');
+
+function cropUnit(crop) {
+  return "tonnes per hectare";
+}
+
+function extractPrediction(data) {
+  // Try to handle whatever shape the API actually returns
+  if (typeof data === 'number') return data;
+  if (typeof data === 'string' && !isNaN(parseFloat(data))) return parseFloat(data);
+  if (data && typeof data === 'object') {
+    const candidates = ['prediction', 'predicted_yield', 'yield', 'result', 'output', 'value'];
+    for (const key of candidates) {
+      if (key in data && (typeof data[key] === 'number' || !isNaN(parseFloat(data[key])))) {
+        return parseFloat(data[key]);
+      }
+    }
+  }
+  return null;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    area: parseFloat(document.getElementById('area').value),
+    year: parseInt(document.getElementById('year').value, 10),
+    rainfall: parseFloat(document.getElementById('rainfall').value),
+    pesticide_use: parseFloat(document.getElementById('pesticide_use').value),
+    average_temperature: parseFloat(document.getElementById('average_temperature').value),
+    crop: document.getElementById('crop').value
+  };
+
+  const apiUrl = document.getElementById('apiUrl').value.trim();
+
+  submitBtn.disabled = true;
+  statusRow.style.display = 'flex';
+  spinner.style.display = 'inline-block';
+  statusText.textContent = 'Contacting the prediction server…';
+  resultDiv.style.display = 'none';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error('Server returned an error (status ' + response.status + ').');
+    }
+
+    const data = await response.json();
+    const predicted = extractPrediction(data);
+
+    resultBox.classList.remove('error');
+
+    if (predicted !== null) {
+      resultHeadline.textContent =
+        'Estimated ' + payload.crop.toLowerCase() + ' yield: ' +
+        predicted.toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+        ' ' + cropUnit(payload.crop);
+      resultDetail.textContent =
+        'Based on a ' + payload.area.toLocaleString() + ' hectare field in ' + payload.year +
+        ', with ' + payload.rainfall + 'mm of rainfall and an average temperature of ' +
+        payload.average_temperature + '°C.';
+    } else {
+      resultHeadline.textContent = 'Prediction received';
+      resultDetail.textContent = 'Raw response from server: ' + JSON.stringify(data);
+    }
+
+  } catch (err) {
+    resultBox.classList.add('error');
+    resultHeadline.textContent = 'Could not get an estimate';
+    resultDetail.textContent =
+      err.message.includes('fetch') || err.name === 'TypeError'
+        ? 'The prediction server could not be reached. Make sure it is running at ' + apiUrl + ' and that this page is open in the same browser on the same computer.'
+        : err.message;
+  } finally {
+    submitBtn.disabled = false;
+    statusRow.style.display = 'none';
+    spinner.style.display = 'none';
+    resultDiv.style.display = 'block';
+  }
+});
+</script>
+
+</body>
+</html>
