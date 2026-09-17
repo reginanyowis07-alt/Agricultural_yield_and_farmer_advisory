@@ -15,13 +15,19 @@ This is a **decision-support** system, not an autonomous farm-management tool. E
 
 
 
-├── agriculture_yield_farmer_advisory_crispdm.ipynb   # Full CRISP-DM analysis and modeling notebook
-├── Agriculture_Yield_Farmer_Advisory_CRISP_DM.docx  # Written capstone report
-├── app.py                                            # FastAPI prediction service
-├── data_utils.py                                     # Data loading and standardization helpers
-├── yield_predictor.html                              # Front-end form for the prediction API
-├── demo_yield.csv                                    # Demo structured yield dataset
-└── demo_farmerchat_kenya.csv                         # Demo farmer-query dataset (Kenya subset)
+agriculture_yield_farmer_advisory_crispdm.ipynb   # Full CRISP-DM analysis and modeling notebook
+               |
+Agriculture_Yield_Farmer_Advisory_CRISP_DM.docx # Written capstone report
+               |
+app.py                                            # FastAPI prediction service
+               |
+data_utils.py                                     # Data loading and standardization helpers
+               |
+yield_predictor.html                              # Front-end form for the prediction API
+               |
+demo_yield.csv                                    # Demo structured yield dataset
+               |
+demo_farmerchat_kenya.csv                         # Demo farmer-query dataset (Kenya subset)
 
 
 ## Data Sources
